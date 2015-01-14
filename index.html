@@ -1,0 +1,238 @@
+<html>
+<head>
+	<title>Google // Leaflet</title>
+	<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7/leaflet.css" />
+	<script src="http://cdn.leafletjs.com/leaflet-0.7/leaflet.js"></script>
+	 <script type="text/javascript"
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDZfzFH4ZNkpE-NH7DfH_9m-vOSNhawCec&sensor=false">
+    </script>
+	<script src="Google.js"></script>
+	 <script src="http://code.jquery.com/jquery-latest.min.js" type="text/javascript"></script>
+	<link rel="stylesheet" href="dist/MarkerCluster.css" />
+	<link rel="stylesheet" href="dist/MarkerCluster.Default.css" />
+	<script src="dist/leaflet.markercluster.js"></script>
+	<script src="dateTimeHelpers.js"></script>
+	<script src="iconDefine.js"></script>
+	<script src="homeButton/leaflet.home.js"></script>
+	<link rel="stylesheet" href="homeButton/home.css" />
+	<link rel="stylesheet" href="style.css" />
+	<link rel="stylesheet" href="customPlayer/sc-player-minimal/sc-player-minimal.css" type="text/cs"/>
+	<script type="text/javascript" charset="utf-8" src="customPlayer/soundcloud.player.api.js"></script>
+	<script type="text/javascript" src="customPlayer/sc-player.js"></script>
+</head>
+<body>
+	<!-- define a DIV into which the map will appear. Make it take up the whole window -->
+	        <div id="topNav" class="topNav"> 
+         <!-- <div id="info" class="info">info </div> -->
+         <a class="head">Of Earth and Sun</a> 
+          <div id="arrow" class='arrow'><p class ="instruct">Select a marker to hear a sound</p> </div> 
+       
+        </div>
+        <script type="text/javascript" >
+        function closeInfoWindow(){
+        	var infoDiv = document.getElementById('info');
+        	infoDiv.style.display= 'none';
+        	toggle=true;
+        }
+        </script>
+        <div class='bubble' id ='info' style="display:none;"> <img onclick="closeInfoWindow();" class='cross' src="cross.png" style='cursor: pointer;'>
+        <div class='about'>
+        <p style =' margin-left:30px; margin-top:30px;' ><img src='abbyPic.jpg' style ='width:100px; height:100px; float:left; margin-right:15px; margin-bottom:10px; '>This soundmap is a sampling of sounds recorded locally by sound artist Abby Aresty, in preparation for her new installation for the Center for Sustainable Landscapes (CSL).  Of Earth and Sun is a yearlong, generative sound art installation composed from natural soundscapes recorded throughout Pittsburgh, and driven by the same elements which power the CSL.  The work will evolve throughout the day, change with the seasons, and will transform with the weather.  Aresty moved to Pittsburgh in July 2013 to begin working on the project, and has been gathering the sounds of Pittsburgh ever since.  Additional sounds will be added to the map over the course of the project's development.</p></div>
+                <hr noshade color='#a4a2a2' style= 'margin-left:25px;margin-right:25px;margin-top:30px;'>
+        <p style =' margin-left:30px;' class='creditText'>Project by<a href='http://abbyaresty.com/' target="_blank"> Abby Aresty</a> <br> supported by <a href='http://studioforcreativeinquiry.org/' target="_blank">The Frank-Ratche Studio for Creative Inquiry</a> and <a href='http://phipps.conservatory.org/' target="_blank">the Phipps Conservatory.</a> <br>interface programmed and designed by <a href="http://www.carolinerecord.com/" target="_blank">Caroline Record</a></p>
+
+        </div>
+	<div style="width:100%; height:90%" id="map"></div>
+<script type='text/javascript'>
+// get marker information from the spreadsheet. 
+        
+
+
+var jsonObjects = new Array();
+var counter = new Array(); 
+var lastClickedMarker; 
+// go through 20 worksheets in the audio metadata spreadsheet.
+for (var i = 1; i < 20; i++) {
+	var jsonObject = new Object();
+	var url = 'https://spreadsheets.google.com/feeds/list/0Ao7O1wOCusRodHY4aU9oMWhyTTBHNDVaSFFhV1V1T0E/' + i + '/public/values?alt=json-in-script&callback=?';
+	jQuery.getJSON(url).success(function (data) {
+		// if we successfully got the data
+	   jsonObject = data;
+	   counter.push(jsonObject);
+	    //console.log(jsonObject);
+	    var lat;
+	    // if it isn't blank
+	    if (jsonObject.feed.entry != undefined) {
+	        var workshtTitle = jsonObject.feed.title.$t;
+	        // go through each item in spreadsheet
+	        for (var v = 0; v < jsonObject.feed.entry.length; v++) {
+	            var lat = jsonObject.feed.entry[v].gsx$lat.$t;
+	            var isPutIn = jsonObject.feed.entry[v].gsx$includeinsoundmapyesorblank.$t;
+	            // checks if there is location data and it is selected to put into the sound map
+	            if ((lat != 0) & (isPutIn == "y")) {
+	                // this obj will contain all relavent data about a single file 
+	                var newObj = new Object();
+	                newObj.workShtTitle = workshtTitle;
+	                newObj.lat = lat;
+	                newObj.lon = jsonObject.feed.entry[v].gsx$long.$t;
+	                newObj.tag = jsonObject.feed.entry[v].gsx$content1.$t;
+	                newObj.date = jsonObject.feed.entry[v].gsx$date.$t;
+	                id = jsonObject.feed.entry[v].gsx$soundcloudid.$t;
+	                newObj.comment = jsonObject.feed.entry[v].gsx$notes.$t;
+	                newObj.pic = jsonObject.feed.entry[v].gsx$pic.$t;
+	                newObj.time = jsonObject.feed.entry[v].gsx$time.$t;
+	                newObj.duration = jsonObject.feed.entry[v].gsx$clipdurationinmillis.$t;
+	                newObj.descript= jsonObject.feed.entry[v].gsx$descriptionforsoundmap.$t;                                
+	                newObj.loc = jsonObject.feed.entry[v].gsx$location.$t;
+	                console.log("locations: " + newObj.loc);
+	                var x =1;
+	                newObj.soundId = id;
+	                newObj.permalink = jsonObject.feed.entry[v].gsx$linktosound.$t;
+	                console.log("!!"+newObj.permalink);
+	                jsonObjects.push(newObj);
+	            }
+	        }
+	    }
+	}).error(function (message) {
+              console.error('error' + message); 
+              console.log("there was an error");
+    }).complete(function () {
+       	//console.log ("complete"); 
+       	// filled up the json objects now creat markers with event handlers
+       	if (counter.length == 19) {
+			//console.log(jsonObjects); 
+	       	
+	        var markers = new L.MarkerClusterGroup();
+			var markersList = [];
+			var latLngArray = new Array(); 
+	        // make a marker for each jsonObject, which contains data about each location.
+	        for(var y=0; y<jsonObjects.length; y++){
+	        	//make marker
+	        	var latLng = L.latLng(jsonObjects[y].lat,jsonObjects[y].lon);
+	        	latLngArray.push(latLng); 
+	        	var marker = L.marker(latLng,{
+	        		icon: newPlace,
+	        		title: 'newPlace'
+	        	});
+	        	//popup content
+	        	var stringContent = '<div class="infoWindow" ><img style= "width:200px; height:auto;" class="markerImg" src =' + jsonObjects[y].pic +'><p>' + getSeason(jsonObjects[y].date) +" "+ getTimeOfDay(jsonObjects[y].time) + " in " +jsonObjects[y].loc +'<br>'+ jsonObjects[y].time+'<br>'+jsonObjects[y].date+ '<br>'+jsonObjects[y].soundId +'</p></div>';
+	        	
+	        	// I am passing in the permalink through the alt text b/c of a scoping issue 
+	        	// this makes this page less accessesable to people using screen readers. 
+	        	marker.options.alt= jsonObjects[y].permalink;
+	        	//console.log("defined? "+jsonObjects[y]);
+	        	
+	        	var currentObj = jsonObjects[y];
+
+	        	marker.bindPopup(stringContent);
+
+	        	// handles the changing of the marker as it is clicked.
+	        	marker.on('click', function(e) {
+	        		//console.log("did I get inside: "+ currentObj);
+    				if (lastClickedMarker != e.target && lastClickedMarker != undefined){
+
+                                lastClickedMarker.options.title = 'newPlace';
+                                lastClickedMarker.setIcon(oldPlace);
+    				}
+    				var title = e.target.options.title;
+    				//console.log(title);
+    				if (title == 'newPlace'){
+    					e.target.setIcon(selectedPause);
+    					e.target.options.title ='selectedPause';
+    					arrow.innerHTML  = '<div class="cont"><a href='+ e.target.options.alt + ' class="sc-player" id="myPlayer">My dub track</a></div>';
+                                            
+                        $('div.cont').scPlayer();
+
+                          setTimeout(function(){
+                             $(document).bind('onPlayerPlay.scPlayer', function(event){
+                               //console.log("this is the " + e.target.options.title);
+                               if ( e.target.options.title != "newPlace"){
+                                 e.target.setIcon(selectedPause);
+                                 e.target.options.title ='selectedPause';
+                               }
+                             });
+                             $(document).bind('onPlayerPause.scPlayer', function(event){
+                             	//console.log("this is the " + e.target.options.title);
+                               if ( e.target.options.title != "newPlace"){
+                               	
+                                 e.target.setIcon(selectedPlay);
+                                 e.target.options.title ='selectedPlay';
+                                
+                               }
+                             });
+                             
+                         },500);
+    				}
+    				else if (title =='selectedPlay'){
+    					e.target.setIcon(selectedPause);
+    					e.target.options.title ='selectedPause';
+    					$( "a.sc-play" ).trigger( "click" );
+    				}
+    				else if (title=='selectedPause'){
+    					e.target.setIcon(selectedPlay);
+    					e.target.options.title ='selectedPlay';
+    					$( "a.sc-play" ).trigger( "click" );
+    				}
+    				lastClickedMarker = e.target;    				
+    				//console.log(e.target.options.icon);
+				});
+				markersList.push(marker);
+				markers.addLayer(marker);
+	    	// end of for that goes through existing json objects
+	    	}
+	    	var bounds = L.latLngBounds( latLngArray );
+	    	bounds = bounds.pad(.02); 
+	    	console.log("bounds" + bounds); 
+	    	var map = new L.Map('map', {
+	    		center: bounds.getCenter() , 
+	       		zoom: 13, 
+	       		maxZoom: 19,
+	       		minZoom:13,
+	       		home: true,
+	       		info: true,
+	       		closePopupOnClick:true, 
+	       		maxBounds: bounds
+	       	});
+	        var osm = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+	        var ggl = new L.Google();
+	        map.addLayer(ggl);
+	    	map.addLayer(markers);
+	    		        	// if map zooms then points get deselected
+	        	map.on('zoomstart', function(e) {
+	        		if (lastClickedMarker != undefined){
+	                    if (lastClickedMarker.options.title == 'selectedPause'){
+							$("a.sc-play" ).trigger( "click" );
+                		}
+
+		        		lastClickedMarker.options.title = 'newPlace';
+	                    lastClickedMarker.setIcon(oldPlace); 
+                		arrow.innerHTML = "<p class='instruct'> Select a marker to hear a sound</p>";
+                		lastClickedMarker.closePopup();
+                	}
+	        	});
+	        	var popup = L.popup();
+				function onMapClick(e) {
+				    popup
+				        .setLatLng(e.latlng)
+				        .setContent("You clicked the map at: <br>" + e.latlng.toString())
+				        .openOn(map);
+				}
+				map.on('click', onMapClick);
+        }
+
+
+
+       });
+ // end of for that loops through all the worksheets
+ }
+
+
+
+
+
+
+
+</script>
+ 
+</body>
+</html>
