@@ -1,9 +1,9 @@
 javascriptSoundMap
 ==========
 
-![Screenshot](https://github.com/crecord/javascriptSoundMap/documentation/homeScreen.png)
+![Screenshot](https://github.com/crecord/javascriptSoundMap2/blob/master/documentation/homeScreen.png)
 
-![Screenshot](https://github.com/crecord/javascriptSoundMap/documentation/singleSound.png)
+![Screenshot](https://github.com/crecord/javascriptSoundMap2/blob/master/documentation/singleSound.png)
 
 
 [Click here](http://www.carolinerecord.com/soundMapFinal/googleFix.html) to see the live site. 
